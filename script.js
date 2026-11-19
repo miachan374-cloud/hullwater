@@ -1,53 +1,35 @@
-// ===== Hullwater Interactive Features =====
-// Smooth scroll reveal, FAQ accordion, and animated counters for a premium feel ✨
+// Collage drift: as the photos scroll up the screen, set --p from 0 to 1
+// and let the CSS move them. Skipped for people who ask for less motion.
+const photos = document.querySelector('.photos');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Scroll reveal animation
-  const revealElements = document.querySelectorAll('.reveal');
+if (photos && !reduceMotion.matches) {
+  let ticking = false;
 
-  const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        revealObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15 });
+  const update = () => {
+    const rect = photos.getBoundingClientRect();
+    const start = window.innerHeight * 0.5; // begin once the collage's top passes mid-screen
+    const progress = (start - rect.top) / rect.height;
+    photos.style.setProperty('--p', Math.min(Math.max(progress, 0), 1).toFixed(3));
+    ticking = false;
+  };
 
-  revealElements.forEach((el) => revealObserver.observe(el));
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  }, { passive: true });
 
-  // FAQ accordion
-  document.querySelectorAll('.faq-q').forEach((button) => {
-    button.addEventListener('click', () => {
-      const item = button.parentElement;
-      const isOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item').forEach((i) => i.classList.remove('open'));
-      if (!isOpen) item.classList.add('open');
-    });
-  });
+  update();
+}
 
-  // Animated counter for stats
-  const counters = document.querySelectorAll('.stat-num[data-target]');
+// The waitlist form has no service behind it yet. Until one is chosen,
+// stop the submit and say plainly that nothing was sent.
+const form = document.getElementById('waitlist');
+const note = document.getElementById('waitlist-note');
 
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const el = entry.target;
-        const target = parseInt(el.dataset.target, 10);
-        let current = 0;
-        const step = Math.max(1, Math.ceil(target / 40));
-        const tick = setInterval(() => {
-          current += step;
-          if (current >= target) {
-            current = target;
-            clearInterval(tick);
-          }
-          el.textContent = current;
-        }, 30);
-        counterObserver.unobserve(el);
-      }
-    });
-  }, { threshold: 0.5 });
-
-  counters.forEach((counter) => counterObserver.observe(counter));
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  note.hidden = false;
 });
